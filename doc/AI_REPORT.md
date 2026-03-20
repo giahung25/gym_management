@@ -1,7 +1,42 @@
+## Hoạt động: Fix các vấn đề từ Code Review
+
+**Thời gian:** 2026-03-20 18:55
+**Files tác động:**
+- `app/core/database.py` — sửa
+- `app/main.py` — sửa
+- `app/services/member_svc.py` — sửa
+- `requirements.txt` — sửa
+
+**Tóm tắt thay đổi:**
+
+| # | Vấn đề | Fix |
+|---|--------|-----|
+| 1 | `executescript()` bypass transaction context manager | Thay bằng `conn.execute()` từng lệnh + explicit `commit/rollback` |
+| 2 | FK dùng inline `REFERENCES` không nhất quán | Chuyển sang `FOREIGN KEY(...) REFERENCES(...)` chuẩn |
+| 3 | Thiếu indexes trên các cột query thường xuyên | Thêm 6 indexes: `phone`, `is_active`, `member_id`, `plan_id`, `status` (subs), `status` (equipment) |
+| 4 | `page.overlay` tích lũy dialogs mỗi lần navigate | Thêm `page.overlay.clear()` trước `page.controls.clear()` |
+| 5 | `init_db()` không có error handling | Bọc trong `try/except`, in lỗi rõ ràng rồi re-raise |
+| 6 | `update_member()` signature nhận `name/phone/email/kwargs` gây nhầm lẫn | Đơn giản hóa: chỉ nhận `member` đã mutate, thêm docstring |
+| 7 | `requirements.txt` không pin version | Đổi `>=0.20.0` → `==0.82.2` (version đang dùng) |
+
+**Trạng thái Test:** Chưa có test suite — cần thêm.
+
+---
+
+## Hoạt động: Review UI toàn bộ
+
+**Thời gian:** 2026-03-20 18:48
+**File tác động:** `doc/UI_REVIEW.md` (tạo mới)
+**Tóm tắt:** Review toàn bộ 5 màn hình + 2 components trong `gui/`. Phân tích design system, chức năng từng màn hình, vấn đề và đề xuất cải thiện.
+**Trạng thái Test:** Không áp dụng (báo cáo tĩnh)
+
+---
+
 # Báo cáo chi tiết: Tầng Models — Gym Management System
 
 **Ngày tạo:** 2026-03-18
-**Phạm vi:** `app/models/`
+**Cập nhật lần cuối:** 2026-03-19
+**Phạm vi:** `app/models/` + `gui/`
 **Dự án:** Gym Management System
 
 ---
@@ -14,7 +49,7 @@
 | Ngôn ngữ | Python (thuần, không dùng ORM) |
 | Database | SQLite3 |
 | GUI Framework | Flet |
-| Phạm vi báo cáo | `app/models/` |
+| Phạm vi báo cáo | `app/models/` + `gui/` |
 
 ---
 
@@ -321,7 +356,92 @@ __all__ = [
 
 ---
 
-## 4. Điểm còn thiếu so với `note.txt`
+---
+
+## 4. Tầng GUI — `gui/` (hoàn thành 2026-03-19)
+
+### Cấu trúc
+
+```
+gui/
+├── __init__.py
+├── theme.py                  # Màu sắc, font size, spacing constants
+├── dashboard.py              # Dashboard screen chính
+└── components/
+    ├── __init__.py
+    ├── sidebar.py            # Sidebar navigation (reusable)
+    └── header.py             # Top bar (reusable)
+
+app/
+└── main.py                   # Entry point: ft.app(target=main)
+```
+
+### `gui/theme.py`
+
+Định nghĩa toàn bộ design tokens dùng chung:
+
+| Nhóm | Hằng số tiêu biểu |
+|------|-------------------|
+| Màu sắc | `ORANGE`, `SIDEBAR_BG`, `GREEN`, `AMBER`, `RED`, `GRAY`, `BG`, `CARD_BG` |
+| Typography | `FONT_XS`(11) → `FONT_3XL`(28) |
+| Spacing | `PAD_XS`(4) → `PAD_2XL`(24) |
+| Sizing | `SIDEBAR_WIDTH`(220), `HEADER_HEIGHT`(64), `CARD_RADIUS`(12) |
+
+### `gui/components/sidebar.py`
+
+- `Sidebar(page, active_route)` → `ft.Container`
+- Logo "GymAdmin / MANAGEMENT SYSTEM"
+- 5 nav items: Dashboard, Members, Gym Packages, Equipment, Reports
+- Item active: nền cam (`#F97316`), text trắng; item thường: text xám
+- Nút "+ Add Member" cuối sidebar (nền cam, bo góc)
+
+### `gui/components/header.py`
+
+- `Header(page)` → `ft.Container`
+- Search bar (placeholder: "Search members, packages...")
+- Icon chuông với badge cam (thông báo chưa đọc)
+- Avatar hình tròn + tên "Admin User / Super Manager"
+
+### `gui/dashboard.py`
+
+Các widget con:
+
+| Widget | Mô tả |
+|--------|--------|
+| `stat_card(icon, label, value, badge_text, badge_color)` | 4 KPI cards: Total Members, Expiring Soon, Monthly Revenue, Maintenance Needed |
+| `member_row(name, initials, avatar_color, status, joined)` | 1 dòng bảng Recent Member Activity (badge Active/Expired/Pending) |
+| `revenue_chart()` | Bar chart 6 tháng dùng `ft.Container` custom |
+| `active_growth_chart()` | 3 `ft.ProgressBar` nằm ngang theo loại membership |
+| `package_card(name, price, period, member_count, duration_label, is_popular)` | Card gói tập; gói "Elite Annual" có badge POPULAR |
+| `equipment_card(name, wear_pct, purchased, status)` | Card thiết bị với `ft.ProgressBar` wear level |
+
+### `app/main.py`
+
+```python
+import flet as ft
+from gui.dashboard import DashboardScreen
+
+def main(page: ft.Page):
+    page.title = "GymAdmin Management System"
+    page.window_width = 1280
+    page.window_height = 800
+    page.bgcolor = "#F5F5F5"
+    page.padding = 0
+    page.add(DashboardScreen(page))
+
+ft.app(target=main)
+```
+
+### Chạy ứng dụng
+
+```bash
+cd E:/gym_management
+python app/main.py
+```
+
+---
+
+## 5. Điểm còn thiếu ở tầng Models so với `note.txt`
 
 | Field / File thiếu | Lý do | Ưu tiên |
 |---------------------|-------|---------|
@@ -332,23 +452,46 @@ __all__ = [
 
 ---
 
-## 5. Phần chưa làm (ngoài phạm vi lần này)
+## 6. Phần chưa làm (ngoài phạm vi hiện tại)
 
-| Module | Mô tả |
-|--------|--------|
-| `app/core/database.py` | Tạo kết nối SQLite3, định nghĩa schema các bảng (`members`, `membership_plans`, `subscriptions`, `equipment`) |
-| `app/services/` | Business logic: tìm kiếm, lọc, xử lý nghiệp vụ |
-| `app/api/` hoặc `app/repositories/` | Data access layer — CRUD với SQLite3 |
-| `gui/` | Giao diện Flet — không đụng đến trong phạm vi này |
+| Module | Mô tả | Ưu tiên |
+|--------|--------|---------|
+| `app/core/database.py` | Tạo kết nối SQLite3, định nghĩa schema các bảng (`members`, `membership_plans`, `subscriptions`, `equipment`) | **Cao** |
+| `app/services/` | Business logic: tìm kiếm, lọc, thống kê, xử lý nghiệp vụ | **Cao** |
+| `app/api/` hoặc `app/repositories/` | Data access layer — CRUD với SQLite3 | **Cao** |
+| GUI ↔ Data binding | Kết nối `gui/dashboard.py` với dữ liệu thật từ DB (hiện tại dùng mock data) | Trung bình |
+| Các màn hình GUI còn lại | Members, Gym Packages, Equipment, Reports screens | Trung bình |
+| `member.photo` | Field ảnh hội viên theo `note.txt` | Thấp |
+| `equipment.location` | Field vị trí thiết bị theo `note.txt` | Thấp |
 
 ---
 
-## 6. Tóm tắt
+## 7. Tóm tắt tiến độ
+
+### Tầng Models
 
 | File | Class(es) | Trạng thái |
 |------|-----------|------------|
-| `base.py` | `BaseModel` | Hoàn thành (đã sửa bug indent + is_active) |
-| `member.py` | `Member` | Hoàn thành (thiếu `photo`) |
-| `membership.py` | `MembershipPlan`, `MembershipSubscription` | Hoàn thành |
-| `equipment.py` | `Equipment` | Hoàn thành (thiếu `location`) |
-| `__init__.py` | — | Hoàn thành |
+| `app/models/base.py` | `BaseModel` | Hoàn thành (đã sửa bug indent + is_active) |
+| `app/models/member.py` | `Member` | Hoàn thành (thiếu `photo`) |
+| `app/models/membership.py` | `MembershipPlan`, `MembershipSubscription` | Hoàn thành |
+| `app/models/equipment.py` | `Equipment` | Hoàn thành (thiếu `location`) |
+| `app/models/__init__.py` | — | Hoàn thành |
+
+### Tầng GUI
+
+| File | Mô tả | Trạng thái |
+|------|--------|------------|
+| `gui/theme.py` | Design tokens (màu, font, spacing) | Hoàn thành |
+| `gui/components/sidebar.py` | Sidebar navigation | Hoàn thành |
+| `gui/components/header.py` | Top bar | Hoàn thành |
+| `gui/dashboard.py` | Dashboard screen (mock data) | Hoàn thành |
+| `app/main.py` | Entry point Flet | Hoàn thành |
+
+### Tầng Core / Services / Data (chưa làm)
+
+| File | Trạng thái |
+|------|------------|
+| `app/core/database.py` | Chưa làm |
+| `app/services/*.py` | Stub rỗng |
+| `app/api/*.py` | Stub rỗng |
