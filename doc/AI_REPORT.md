@@ -1,3 +1,18 @@
+## Hoạt động: Xóa thư mục presentation khỏi repository
+
+**Thời gian:** 2026-03-21 12:57 (UTC+7)
+**Files tác động:**
+- `presentation/GymAdmin_Presentation.pptx` — đã xóa
+- `presentation/create_pptx.py` — đã xóa
+
+**Tóm tắt thay đổi:**
+- Xóa toàn bộ thư mục `presentation/` khỏi git tracking theo yêu cầu người dùng
+- File đã được push nhầm lên remote, nay xóa bằng `git rm -r`
+
+**Trạng thái Test:** Không liên quan
+
+---
+
 ## Hoạt động: Tạo file PowerPoint thuyết trình 10 slides
 
 **Thời gian:** 2026-03-20 22:03
