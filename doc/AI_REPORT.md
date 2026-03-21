@@ -1,3 +1,16 @@
+## Hoạt động: Xóa thư mục .agents khỏi repository
+
+**Thời gian:** 2026-03-21 12:58 (UTC+7)
+**Files tác động:**
+- `.agents/skills/web-design-guidelines/SKILL.md` — đã xóa
+
+**Tóm tắt thay đổi:**
+- Xóa toàn bộ thư mục `.agents/` khỏi git tracking theo yêu cầu người dùng
+
+**Trạng thái Test:** Không liên quan
+
+---
+
 ## Hoạt động: Xóa thư mục presentation khỏi repository
 
 **Thời gian:** 2026-03-21 12:57 (UTC+7)
