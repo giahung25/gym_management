@@ -86,3 +86,14 @@ Thêm màn hình mới: tạo file trong `gui/`, import vào `app/main.py`, thê
     - **Tóm tắt thay đổi:** Giải thích ngắn gọn logic bạn đã sửa/thêm.
     - **Trạng thái Test:** Kết quả của lệnh chạy test (nếu có).
 - Định dạng báo cáo: Sử dụng định dạng Markdown, thêm nội dung mới lên ĐẦU tệp để dễ theo dõi.
+
+## Báo cáo tiến độ (Progress Reporting)
+- Sau khi hoàn thành mỗi Ưu tiên (Priority) trong `doc/report_plan.md`, bạn PHẢI cập nhật file đó.
+- Nội dung cập nhật bao gồm:
+    - Đánh dấu ✅ cho các mục đã xong.
+    - Ghi chú ngắn gọn về các thay đổi quan trọng (ví dụ: "Bỏ getattr() workaround", "Chuẩn hóa start_date").
+    - Đánh giá lại các mục "Cần cải thiện" (nếu có).
+- Mục tiêu: `report_plan.md` luôn phản ánh chính xác 100% trạng thái hiện tại của codebase.
+
+## Không cần commit và push lên git khi chưa có yêu cầu không đưa presentation lên github
+

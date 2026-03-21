@@ -320,7 +320,8 @@ def DashboardScreen(page: ft.Page) -> ft.Row:
     member_stats = member_svc.get_member_stats()
     revenue_stats = membership_svc.get_revenue_stats()
     eq_summary = equipment_svc.get_equipment_summary()
-    expiring_count = len(membership_repo.get_expiring_soon(days=7))
+    expiring_subs = membership_repo.get_expiring_soon(days=7)
+    expiring_count = len(expiring_subs)
     monthly_revenue = membership_svc.get_monthly_revenue(months=6)
     plan_stats = membership_svc.get_plan_subscription_stats()
 
@@ -487,6 +488,75 @@ def DashboardScreen(page: ft.Page) -> ft.Row:
         spacing=theme.PAD_MD,
     )
 
+    # --- [2.2] Expiring Soon Section ---
+    all_members_map = {m.id: m.name for m in member_repo.get_all(active_only=False)}
+    all_plans_map = {p.id: p.name for p in membership_repo.get_all_plans(active_only=False)}
+
+    if expiring_subs:
+        expiring_rows = []
+        for s in expiring_subs:
+            remaining = s.days_remaining()
+            badge_color = theme.RED_LIGHT if remaining <= 3 else theme.AMBER_LIGHT
+            badge_fg = theme.RED if remaining <= 3 else theme.AMBER
+            expiring_rows.append(ft.Container(
+                content=ft.Row(
+                    controls=[
+                        ft.Text(all_members_map.get(s.member_id, "?"), size=theme.FONT_SM,
+                                weight=ft.FontWeight.W_500, color=theme.TEXT_PRIMARY, expand=True),
+                        ft.Text(all_plans_map.get(s.plan_id, "?"), size=theme.FONT_SM,
+                                color=theme.GRAY, width=160),
+                        ft.Text(s.end_date.strftime("%d/%m/%Y"), size=theme.FONT_SM,
+                                color=theme.GRAY, width=90),
+                        ft.Container(
+                            content=ft.Text(f"Còn {remaining} ngày", size=theme.FONT_XS,
+                                            color=badge_fg, weight=ft.FontWeight.W_600),
+                            bgcolor=badge_color, border_radius=theme.BADGE_RADIUS,
+                            padding=ft.padding.symmetric(horizontal=8, vertical=3),
+                        ),
+                    ],
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                ),
+                padding=ft.padding.symmetric(horizontal=theme.PAD_LG, vertical=theme.PAD_MD),
+                border=ft.border.only(bottom=ft.BorderSide(1, theme.BORDER)),
+            ))
+        expiring_body = ft.Column(controls=expiring_rows, spacing=0)
+    else:
+        expiring_body = ft.Container(
+            content=ft.Text("Không có gói tập nào sắp hết hạn trong 7 ngày tới.",
+                            size=theme.FONT_SM, color=theme.GRAY),
+            padding=ft.padding.all(theme.PAD_LG),
+        )
+
+    expiring_section = ft.Container(
+        content=ft.Column(
+            controls=[
+                ft.Row(
+                    controls=[
+                        ft.Row(
+                            controls=[
+                                ft.Icon(ft.Icons.WARNING_AMBER_ROUNDED, color=theme.AMBER, size=18),
+                                ft.Text("Gói tập sắp hết hạn (7 ngày tới)",
+                                        size=theme.FONT_LG, weight=ft.FontWeight.BOLD,
+                                        color=theme.TEXT_PRIMARY),
+                            ],
+                            spacing=theme.PAD_SM,
+                        ),
+                        ft.Text("Xem tất cả", size=theme.FONT_SM, color=theme.ORANGE,
+                                weight=ft.FontWeight.W_600),
+                    ],
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                ),
+                expiring_body,
+            ],
+            spacing=0,
+        ),
+        bgcolor=theme.CARD_BG,
+        border_radius=theme.CARD_RADIUS,
+        padding=ft.padding.only(left=0, right=0, top=theme.PAD_LG, bottom=0),
+        shadow=ft.BoxShadow(blur_radius=4, color="#0000000A", offset=ft.Offset(0, 1)),
+    )
+
     # --- Middle Row: member table + charts ---
     middle_row = ft.Row(
         controls=[
@@ -528,6 +598,8 @@ def DashboardScreen(page: ft.Page) -> ft.Row:
                         ft.Text("Welcome back, Admin. Here's what's happening today.", size=theme.FONT_SM, color=theme.GRAY),
                         ft.Container(height=4),
                         stat_cards,
+                        ft.Container(height=4),
+                        expiring_section,
                         ft.Container(height=4),
                         middle_row,
                         ft.Container(height=4),

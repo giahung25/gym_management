@@ -11,7 +11,7 @@ def _row_to_equipment(row) -> Equipment:
     e.quantity = row["quantity"]
     e.status = row["status"]
     e.purchase_date = row["purchase_date"]
-    e.location = row["location"] if "location" in row.keys() else None
+    e.location = row["location"]
     e.notes = row["notes"]
     e.created_at = datetime.fromisoformat(row["created_at"])
     e.updated_at = datetime.fromisoformat(row["updated_at"])
@@ -27,7 +27,7 @@ def create(equipment: Equipment) -> Equipment:
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (equipment.id, equipment.name, equipment.category, equipment.quantity,
              equipment.status, equipment.purchase_date,
-             getattr(equipment, 'location', None), equipment.notes,
+             equipment.location, equipment.notes,
              equipment.created_at.isoformat(), equipment.updated_at.isoformat(),
              int(equipment.is_active))
         )
@@ -72,7 +72,7 @@ def update(equipment: Equipment) -> Equipment:
             """UPDATE equipment SET name=?, category=?, quantity=?, status=?,
                purchase_date=?, location=?, notes=?, updated_at=?, is_active=? WHERE id=?""",
             (equipment.name, equipment.category, equipment.quantity, equipment.status,
-             equipment.purchase_date, getattr(equipment, 'location', None), equipment.notes,
+             equipment.purchase_date, equipment.location, equipment.notes,
              equipment.updated_at.isoformat(), int(equipment.is_active), equipment.id)
         )
     return equipment

@@ -1,3 +1,111 @@
+## Hoạt động: Tạo file PowerPoint thuyết trình 10 slides
+
+**Thời gian:** 2026-03-20 22:03
+**Files tác động:**
+- `presentation/` — tạo mới thư mục
+- `presentation/create_pptx.py` — script Python tạo PPTX
+- `presentation/GymAdmin_Presentation.pptx` — file kết quả (51KB)
+
+**Tóm tắt thay đổi:**
+- Tạo thư mục `presentation/` độc lập trong dự án
+- Dùng thư viện `python-pptx` để tạo 10 slides với design theo theme.py (màu ORANGE #F97316, SIDEBAR #1C1C2E)
+- Nội dung 10 slides: Trang bìa → Tổng quan → Kiến trúc → DB Schema → Models → GUI/Navigation → Dashboard → Members/Memberships → Equipment/Reports → Đánh giá & Roadmap
+
+**Trạng thái Test:** Chạy thành công, file 51KB
+
+---
+
+## Hoạt động: Viết báo cáo kỹ thuật chi tiết toàn hệ thống
+
+**Thời gian:** 2026-03-20 21:40
+**Files tác động:**
+- `doc/BAO_CAO_CHI_TIET.md` — tạo mới
+
+**Tóm tắt thay đổi:**
+- Đọc và phân tích toàn bộ 23 file source code trong hệ thống
+- Viết báo cáo ~3200 dòng bao gồm: tổng quan kiến trúc, sơ đồ khối, phân tích chi tiết từng tầng (Core → Models → Repositories → Services → GUI), giải thích từng khối code quan trọng, luồng dữ liệu, và đánh giá kỹ thuật
+- Báo cáo tuân theo cấu trúc yêu cầu trong `sub_prompt.txt`
+
+**Trạng thái Test:** Không áp dụng (báo cáo tĩnh)
+
+---
+
+## Hoạt động: Fix vấn đề kỹ thuật — start_date type & header search
+
+**Thời gian:** 2026-03-20 20:49
+**Files tác động:**
+- `app/models/membership.py` — chuẩn hóa `start_date` về `datetime`
+- `gui/components/header.py` — thêm `on_change` gọi `page.on_search_change`
+- `app/main.py` — reset `page.on_search_change = None` khi navigate
+- `gui/members.py` — đăng ký `page.on_search_change` callback
+
+**Tóm tắt thay đổi:**
+- `MembershipSubscription.__init__` kiểm tra nếu `start_date` là `date` thuần thì convert sang `datetime` bằng `datetime.combine()` — tránh lỗi so sánh `datetime > date`
+- Header search TextField có `on_change` gọi `page.on_search_change` nếu callback tồn tại
+- `navigate()` reset `page.on_search_change = None` mỗi lần đổi màn hình — tránh callback stale
+- `MembersScreen` đăng ký `page.on_search_change` → header search giờ filter bảng hội viên realtime
+
+**Trạng thái Test:** Chưa có test suite.
+
+---
+
+## Hoạt động: Hoàn thành Ưu tiên 2 (2.1 → 2.4)
+
+**Thời gian:** 2026-03-20 20:41
+**Files tác động:**
+- `app/services/membership_svc.py` — thêm `cancel_subscription()`
+- `gui/memberships.py` — thêm nút Hủy + confirm dialog (2.4)
+- `gui/members.py` — thêm dialog Chi tiết + filter giới tính/subscription (2.1, 2.3)
+- `gui/dashboard.py` — thêm section "Sắp hết hạn" (2.2)
+
+**Tóm tắt thay đổi:**
+- [2.1] Dialog "Lịch sử gói tập" cho từng hội viên: hiển thị toàn bộ subscription history với tên gói, ngày, trạng thái, giá
+- [2.2] Section "Gói tập sắp hết hạn" trên Dashboard: bảng danh sách chi tiết (tên hội viên, gói, ngày hết hạn, đếm ngược), badge đỏ nếu ≤3 ngày
+- [2.3] Filter trên trang Members: dropdown giới tính (Nam/Nữ/Khác) + dropdown trạng thái gói (Đang active/Không active), kết hợp được với search
+- [2.4] Nút "Hủy" cho subscription đang active trong tab Đăng ký; confirm dialog trước khi hủy; `cancel_subscription()` trong service validate và persist
+
+**Trạng thái Test:** Chưa có test suite.
+
+---
+
+## Hoạt động: Hoàn thành Ưu tiên 1 — field photo & location
+
+**Thời gian:** 2026-03-20 20:32
+**Files tác động:**
+- `app/models/member.py` — thêm field `photo`
+- `app/models/equipment.py` — thêm field `location`
+- `app/repositories/member_repo.py` — map `photo` đầy đủ (read/create/update)
+- `app/repositories/equipment_repo.py` — bỏ `getattr()` workaround, dùng `equipment.location`
+- `gui/equipment.py` — bỏ `getattr(eq, "location", "")`, dùng `eq.location`
+
+**Tóm tắt thay đổi:**
+- [1.4] `Member.__init__` thêm param `photo=None`; `member_repo` đọc/ghi đúng cột `photo` thay vì hardcode `None`
+- [1.5] `Equipment.__init__` thêm param `location=None`; `equipment_repo` bỏ toàn bộ `getattr()` workaround; GUI equipment bỏ `getattr` tương tự
+- Tất cả Ưu tiên 1 (1.1 → 1.5) đã hoàn thành
+
+**Trạng thái Test:** Chưa có test suite.
+
+---
+
+## Hoạt động: Tạo màn hình đăng nhập
+
+**Thời gian:** 2026-03-20 20:15
+**Files tác động:**
+- `gui/login.py` — tạo mới
+- `app/core/security.py` — implement
+- `app/core/config.py` — thêm ADMIN_USERNAME / ADMIN_PASSWORD
+- `app/main.py` — đổi route khởi động từ `dashboard` → `login`
+
+**Tóm tắt thay đổi:**
+- `LoginScreen`: form username/password, gradient background, logo, nút đăng nhập, hiển thị lỗi inline, hỗ trợ nhấn Enter để submit
+- `check_login()` trong `security.py`: so sánh credentials với config (có thể override qua env var `GYM_USERNAME` / `GYM_PASSWORD`)
+- `navigate("login")` được thêm vào router trong `main.py`; app khởi động tại login thay vì dashboard
+- Default credentials: `admin` / `admin123`
+
+**Trạng thái Test:** Chưa có test cho login flow.
+
+---
+
 ## Hoạt động: Fix các vấn đề từ Code Review
 
 **Thời gian:** 2026-03-20 18:55

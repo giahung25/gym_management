@@ -3,6 +3,11 @@ from gui import theme
 
 
 def Header(page: ft.Page) -> ft.Container:
+    def _on_search(e):
+        cb = getattr(page, "on_search_change", None)
+        if callable(cb):
+            cb(e.control.value)
+
     search_bar = ft.Container(
         content=ft.Row(
             controls=[
@@ -15,6 +20,7 @@ def Header(page: ft.Page) -> ft.Container:
                     text_size=theme.FONT_SM,
                     content_padding=ft.padding.symmetric(horizontal=4, vertical=0),
                     expand=True,
+                    on_change=_on_search,
                 ),
             ],
             spacing=theme.PAD_SM,

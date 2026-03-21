@@ -4,6 +4,7 @@ from gui.components.header import Header
 from gui.components.sidebar import Sidebar
 from app.repositories import membership_repo, member_repo
 from app.services import membership_svc
+from app.models.membership import MembershipSubscription
 
 
 def MembershipsScreen(page: ft.Page) -> ft.Row:
@@ -198,6 +199,32 @@ def MembershipsScreen(page: ft.Page) -> ft.Row:
         "cancelled": (theme.RED_LIGHT, theme.RED),
     }
 
+    cancel_confirm_dlg = ft.AlertDialog(
+        modal=True,
+        title=ft.Text("Xác nhận hủy gói tập"),
+        content=ft.Text("Hủy gói tập này? Hành động không thể hoàn tác."),
+    )
+    cancel_target_id = {"id": None}
+
+    def do_cancel(e):
+        try:
+            membership_svc.cancel_subscription(cancel_target_id["id"])
+        except ValueError:
+            pass
+        cancel_confirm_dlg.open = False
+        page.update()
+        refresh_subs()
+
+    cancel_confirm_dlg.actions = [
+        ft.TextButton("Đóng", on_click=lambda e: setattr(cancel_confirm_dlg, "open", False) or page.update()),
+        ft.ElevatedButton("Hủy gói", on_click=do_cancel, bgcolor=theme.RED, color=theme.WHITE),
+    ]
+
+    def open_cancel_confirm(sub_id: str):
+        cancel_target_id["id"] = sub_id
+        cancel_confirm_dlg.open = True
+        page.update()
+
     def refresh_subs():
         membership_svc.auto_expire_subscriptions()
         subs = membership_repo.get_all_subscriptions()
@@ -206,6 +233,12 @@ def MembershipsScreen(page: ft.Page) -> ft.Row:
         rows = []
         for s in subs:
             bg, fg = STATUS_COLORS.get(s.status, (theme.GRAY_LIGHT, theme.GRAY))
+            cancel_btn = ft.Container(
+                content=ft.Text("Hủy", size=theme.FONT_XS, color=theme.RED, weight=ft.FontWeight.W_600),
+                border=ft.border.all(1, theme.RED), border_radius=6,
+                padding=ft.padding.symmetric(horizontal=8, vertical=3),
+                on_click=lambda e, sid=s.id: open_cancel_confirm(sid),
+            ) if s.status == MembershipSubscription.STATUS_ACTIVE else ft.Container(width=46)
             rows.append(ft.Container(
                 content=ft.Row(
                     controls=[
@@ -221,6 +254,7 @@ def MembershipsScreen(page: ft.Page) -> ft.Row:
                             alignment=ft.Alignment.CENTER,
                         ),
                         ft.Text(f"{int(s.price_paid):,}đ", size=theme.FONT_SM, color=theme.ORANGE, width=100),
+                        cancel_btn,
                     ],
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                     vertical_alignment=ft.CrossAxisAlignment.CENTER,
@@ -232,7 +266,7 @@ def MembershipsScreen(page: ft.Page) -> ft.Row:
         page.update()
 
     # ── Tabs ─────────────────────────────────────────────────────────────────
-    page.overlay.extend([plan_dialog, confirm_plan_dlg, sub_dialog])
+    page.overlay.extend([plan_dialog, confirm_plan_dlg, sub_dialog, cancel_confirm_dlg])
 
     plans_tab_content = ft.Container(
         content=ft.Column(
@@ -265,6 +299,7 @@ def MembershipsScreen(page: ft.Page) -> ft.Row:
                 ft.Text("Kết thúc", size=theme.FONT_XS, color=theme.GRAY, weight=ft.FontWeight.W_600, width=100),
                 ft.Text("Trạng thái", size=theme.FONT_XS, color=theme.GRAY, weight=ft.FontWeight.W_600, width=80),
                 ft.Text("Giá trả", size=theme.FONT_XS, color=theme.GRAY, weight=ft.FontWeight.W_600, width=100),
+                ft.Text("", width=46),
             ],
         ),
         bgcolor=theme.BG,

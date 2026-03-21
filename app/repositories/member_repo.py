@@ -13,6 +13,7 @@ def _row_to_member(row) -> Member:
     m.date_of_birth = row["date_of_birth"]
     m.address = row["address"]
     m.emergency_contact = row["emergency_contact"]
+    m.photo = row["photo"]
     m.created_at = datetime.fromisoformat(row["created_at"])
     m.updated_at = datetime.fromisoformat(row["updated_at"])
     m.is_active = bool(row["is_active"])
@@ -26,7 +27,7 @@ def create(member: Member) -> Member:
                address, emergency_contact, photo, created_at, updated_at, is_active)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (member.id, member.name, member.phone, member.email, member.gender,
-             member.date_of_birth, member.address, member.emergency_contact, None,
+             member.date_of_birth, member.address, member.emergency_contact, member.photo,
              member.created_at.isoformat(), member.updated_at.isoformat(), int(member.is_active))
         )
     return member
@@ -62,10 +63,10 @@ def update(member: Member) -> Member:
     with get_db() as conn:
         conn.execute(
             """UPDATE members SET name=?, phone=?, email=?, gender=?, date_of_birth=?,
-               address=?, emergency_contact=?, updated_at=?, is_active=? WHERE id=?""",
+               address=?, emergency_contact=?, photo=?, updated_at=?, is_active=? WHERE id=?""",
             (member.name, member.phone, member.email, member.gender, member.date_of_birth,
-             member.address, member.emergency_contact, member.updated_at.isoformat(),
-             int(member.is_active), member.id)
+             member.address, member.emergency_contact, member.photo,
+             member.updated_at.isoformat(), int(member.is_active), member.id)
         )
     return member
 

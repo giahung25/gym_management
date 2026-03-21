@@ -48,6 +48,16 @@ def subscribe_member(member_id: str, plan_id: str,
     return membership_repo.create_subscription(sub)
 
 
+def cancel_subscription(sub_id: str) -> MembershipSubscription:
+    sub = membership_repo.get_subscription_by_id(sub_id)
+    if not sub:
+        raise ValueError("Không tìm thấy đăng ký gói tập")
+    if sub.status != MembershipSubscription.STATUS_ACTIVE:
+        raise ValueError("Chỉ có thể hủy gói tập đang active")
+    sub.cancel()
+    return membership_repo.update_subscription(sub)
+
+
 def auto_expire_subscriptions():
     membership_repo.expire_old_subscriptions()
 

@@ -99,7 +99,7 @@ def EquipmentScreen(page: ft.Page) -> ft.Row:
         f_qty.value = str(eq.quantity)
         f_status.value = eq.status
         f_purchase.value = str(eq.purchase_date) if eq.purchase_date else ""
-        f_location.value = getattr(eq, "location", "") or ""
+        f_location.value = eq.location or ""
         f_notes.value = eq.notes or ""
         dlg_error.value = ""
         dlg_title.value = "Chỉnh sửa thiết bị"

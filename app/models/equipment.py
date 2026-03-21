@@ -10,13 +10,14 @@ class Equipment(BaseModel):
     STATUS_MAINTENANCE = "maintenance"  # Đang bảo trì
 
     def __init__(self, name, category, quantity=1,
-                 purchase_date=None, notes=None, *args, **kwargs):
+                 purchase_date=None, location=None, notes=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = name                            # Tên thiết bị (VD: "Máy chạy bộ")
         self.category = category                    # Loại (VD: "Cardio", "Tạ tự do", "Máy lực")
         self.quantity = quantity                    # Số lượng
         self.status = self.STATUS_WORKING           # Trạng thái ban đầu
         self.purchase_date = purchase_date          # Ngày mua (datetime.date)
+        self.location = location                    # Vị trí đặt thiết bị (VD: "Tầng 1", "Khu Cardio")
         self.notes = notes                          # Ghi chú thêm
 
     def mark_broken(self, notes=None):

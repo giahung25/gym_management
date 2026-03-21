@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from app.models.base import BaseModel
 
 
@@ -28,7 +28,12 @@ class MembershipSubscription(BaseModel):
         self.member_id = member_id
         self.plan_id = plan_id
         self.price_paid = price_paid                        # Giá thực tế đã thanh toán
-        self.start_date = start_date or datetime.now()
+        # Chuẩn hóa về datetime — phòng khi caller truyền datetime.date thuần
+        if start_date is None:
+            start_date = datetime.now()
+        elif isinstance(start_date, date) and not isinstance(start_date, datetime):
+            start_date = datetime.combine(start_date, datetime.min.time())
+        self.start_date = start_date
         self.end_date = self.start_date + timedelta(days=duration_days)
         self.status = self.STATUS_ACTIVE
 
