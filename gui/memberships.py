@@ -1,17 +1,40 @@
+# ============================================================================
+# FILE: gui/memberships.py
+# MỤC ĐÍCH: Màn hình QUẢN LÝ GÓI TẬP & ĐĂNG KÝ — có 2 tab:
+#   Tab 1: Gói tập (MembershipPlan) — CRUD danh sách gói
+#   Tab 2: Đăng ký (Subscription) — quản lý việc hội viên đăng ký gói
+#
+# LAYOUT:
+#   ┌──────────┬─────────────────────────────────────────────────┐
+#   │ SIDEBAR  │  Header                                        │
+#   │          │  ───────────────────────────────────────────    │
+#   │          │  Gói tập & Đăng ký                             │
+#   │          │  [Tab: Gói tập] [Tab: Đăng ký]                 │
+#   │          │  ┌─────────────────────────────────────────┐   │
+#   │          │  │ (Nội dung tab hiện tại)                  │   │
+#   │          │  └─────────────────────────────────────────┘   │
+#   └──────────┴─────────────────────────────────────────────────┘
+# ============================================================================
+
 import flet as ft
 from gui import theme
 from gui.components.header import Header
 from gui.components.sidebar import Sidebar
-from app.repositories import membership_repo, member_repo
-from app.services import membership_svc
-from app.models.membership import MembershipSubscription
+from app.repositories import membership_repo, member_repo   # Truy cập database
+from app.services import membership_svc                       # Logic nghiệp vụ
+from app.models.membership import MembershipSubscription      # Dùng STATUS constants
 
 
 def MembershipsScreen(page: ft.Page) -> ft.Row:
-    # ── Plan Tab ─────────────────────────────────────────────────────────────
-    plans_body = ft.Column(controls=[], spacing=0)
-    selected_plan = {"obj": None}
+    """Tạo màn hình quản lý gói tập và đăng ký."""
 
+    # ══════════════════════════════════════════════════════════════════════════
+    # TAB 1: GÓI TẬP (Plans)
+    # ══════════════════════════════════════════════════════════════════════════
+    plans_body = ft.Column(controls=[], spacing=0)  # Container chứa danh sách gói
+    selected_plan = {"obj": None}                    # Gói đang sửa (None = thêm mới)
+
+    # ── Form fields cho dialog thêm/sửa gói ──────────────────────────────────
     fp_name = ft.TextField(label="Tên gói *", expand=True)
     fp_days = ft.TextField(label="Số ngày *", expand=True, keyboard_type=ft.KeyboardType.NUMBER)
     fp_price = ft.TextField(label="Giá (VND) *", expand=True, keyboard_type=ft.KeyboardType.NUMBER)
@@ -20,10 +43,19 @@ def MembershipsScreen(page: ft.Page) -> ft.Row:
     plan_dialog_title = ft.Text("", size=theme.FONT_LG, weight=ft.FontWeight.BOLD)
 
     def save_plan(e):
+        """Lưu gói tập (thêm mới hoặc cập nhật).
+
+        Flow:
+        1. Parse số ngày và giá từ string → int/float
+        2. Nếu thêm mới → gọi membership_svc.create_plan()
+        3. Nếu sửa → gọi membership_svc.update_plan()
+        4. Đóng dialog + refresh danh sách
+        """
         try:
-            days = int(fp_days.value or 0)
-            price = float(fp_price.value or 0)
+            days = int(fp_days.value or 0)      # Chuyển string → int (0 nếu rỗng)
+            price = float(fp_price.value or 0)  # Chuyển string → float
             if selected_plan["obj"] is None:
+                # THÊM MỚI
                 membership_svc.create_plan(
                     name=fp_name.value,
                     duration_days=days,
@@ -31,6 +63,7 @@ def MembershipsScreen(page: ft.Page) -> ft.Row:
                     description=fp_desc.value or None,
                 )
             else:
+                # CẬP NHẬT
                 p = selected_plan["obj"]
                 membership_svc.update_plan(p, name=fp_name.value, duration_days=days,
                                            price=price, description=fp_desc.value or None)
@@ -41,6 +74,7 @@ def MembershipsScreen(page: ft.Page) -> ft.Row:
             plan_dialog_error.value = str(ex)
             page.update()
 
+    # ── Dialog thêm/sửa gói ──────────────────────────────────────────────────
     plan_dialog = ft.AlertDialog(
         modal=True,
         title=plan_dialog_title,
@@ -60,6 +94,7 @@ def MembershipsScreen(page: ft.Page) -> ft.Row:
     )
 
     def open_add_plan(e):
+        """Mở dialog thêm gói tập mới — reset form trước."""
         selected_plan["obj"] = None
         fp_name.value = fp_days.value = fp_price.value = fp_desc.value = ""
         plan_dialog_error.value = ""
@@ -68,6 +103,7 @@ def MembershipsScreen(page: ft.Page) -> ft.Row:
         page.update()
 
     def open_edit_plan(p):
+        """Mở dialog sửa gói tập — điền thông tin hiện tại vào form."""
         selected_plan["obj"] = p
         fp_name.value = p.name
         fp_days.value = str(p.duration_days)
@@ -78,6 +114,7 @@ def MembershipsScreen(page: ft.Page) -> ft.Row:
         plan_dialog.open = True
         page.update()
 
+    # ── Dialog xác nhận xóa gói ──────────────────────────────────────────────
     delete_plan_id = {"id": None}
     confirm_plan_dlg = ft.AlertDialog(
         modal=True,
@@ -88,34 +125,48 @@ def MembershipsScreen(page: ft.Page) -> ft.Row:
                               on_click=lambda e: [membership_repo.delete_plan(delete_plan_id["id"]),
                                                   setattr(confirm_plan_dlg, "open", False),
                                                   page.update(), refresh_plans()]),
+            # ↑ Lambda chứa list [] để thực hiện nhiều hành động:
+            #   1. Xóa gói trong DB
+            #   2. Đóng dialog
+            #   3. Cập nhật UI
+            #   4. Refresh danh sách
         ],
     )
 
     def refresh_plans():
+        """Tải lại danh sách gói tập từ database và render ra UI."""
         plans = membership_repo.get_all_plans()
         rows = []
         for p in plans:
             rows.append(ft.Container(
                 content=ft.Row(
                     controls=[
+                        # Cột trái: tên gói + mô tả
                         ft.Column(
                             controls=[
-                                ft.Text(p.name, size=theme.FONT_MD, weight=ft.FontWeight.W_600, color=theme.TEXT_PRIMARY),
-                                ft.Text(f"{p.duration_days} ngày  •  {p.description or ''}", size=theme.FONT_XS, color=theme.GRAY),
+                                ft.Text(p.name, size=theme.FONT_MD, weight=ft.FontWeight.W_600,
+                                        color=theme.TEXT_PRIMARY),
+                                ft.Text(f"{p.duration_days} ngày  •  {p.description or ''}",
+                                        size=theme.FONT_XS, color=theme.GRAY),
                             ],
                             spacing=2, expand=True,
                         ),
-                        ft.Text(f"{int(p.price):,}đ", size=theme.FONT_LG, weight=ft.FontWeight.BOLD, color=theme.ORANGE, width=120),
+                        # Giá (cam, in đậm)
+                        ft.Text(f"{int(p.price):,}đ", size=theme.FONT_LG,
+                                weight=ft.FontWeight.BOLD, color=theme.ORANGE, width=120),
+                        # Nút sửa/xóa
                         ft.Row(
                             controls=[
                                 ft.Container(
-                                    content=ft.Text("Sửa", size=theme.FONT_XS, color=theme.ORANGE, weight=ft.FontWeight.W_600),
+                                    content=ft.Text("Sửa", size=theme.FONT_XS, color=theme.ORANGE,
+                                                    weight=ft.FontWeight.W_600),
                                     border=ft.border.all(1, theme.ORANGE), border_radius=6,
                                     padding=ft.padding.symmetric(horizontal=10, vertical=3),
                                     on_click=lambda e, plan=p: open_edit_plan(plan),
                                 ),
                                 ft.Container(
-                                    content=ft.Text("Xóa", size=theme.FONT_XS, color=theme.RED, weight=ft.FontWeight.W_600),
+                                    content=ft.Text("Xóa", size=theme.FONT_XS, color=theme.RED,
+                                                    weight=ft.FontWeight.W_600),
                                     border=ft.border.all(1, theme.RED), border_radius=6,
                                     padding=ft.padding.symmetric(horizontal=10, vertical=3),
                                     on_click=lambda e, plan=p: [
@@ -134,27 +185,34 @@ def MembershipsScreen(page: ft.Page) -> ft.Row:
                 padding=ft.padding.symmetric(horizontal=theme.PAD_LG, vertical=theme.PAD_MD),
                 border=ft.border.only(bottom=ft.BorderSide(1, theme.BORDER)),
             ))
-        plans_body.controls = rows
+        plans_body.controls = rows  # Gán danh sách row mới vào container
         page.update()
 
-    # ── Subscription Tab ─────────────────────────────────────────────────────
+    # ══════════════════════════════════════════════════════════════════════════
+    # TAB 2: ĐĂNG KÝ GÓI TẬP (Subscriptions)
+    # ══════════════════════════════════════════════════════════════════════════
     subs_body = ft.Column(controls=[], spacing=0)
 
-    fs_member = ft.Dropdown(label="Hội viên *", expand=True)
-    fs_plan = ft.Dropdown(label="Gói tập *", expand=True)
-    fs_price = ft.TextField(label="Giá thực tế (để trống = giá gói)", expand=True,
+    # ── Form đăng ký mới ──────────────────────────────────────────────────────
+    fs_member = ft.Dropdown(label="Hội viên *", expand=True)   # Dropdown chọn hội viên
+    fs_plan = ft.Dropdown(label="Gói tập *", expand=True)      # Dropdown chọn gói
+    fs_price = ft.TextField(label="Giá thực tế (để trống = giá gốc)", expand=True,
                             keyboard_type=ft.KeyboardType.NUMBER)
     fs_start = ft.TextField(label="Ngày bắt đầu (YYYY-MM-DD, để trống = hôm nay)", expand=True)
     sub_dialog_error = ft.Text("", color=theme.RED, size=theme.FONT_SM)
 
     def save_sub(e):
+        """Lưu đăng ký gói tập mới."""
         try:
             from datetime import datetime as dt
+            # Parse ngày bắt đầu (nếu có nhập)
             start = dt.fromisoformat(fs_start.value) if fs_start.value.strip() else None
+            # Parse giá thực tế (nếu có nhập)
             price = float(fs_price.value) if fs_price.value.strip() else None
+            # Gọi service để đăng ký
             membership_svc.subscribe_member(
-                member_id=fs_member.value,
-                plan_id=fs_plan.value,
+                member_id=fs_member.value,   # ID hội viên đã chọn trong dropdown
+                plan_id=fs_plan.value,       # ID gói tập đã chọn
                 price_paid=price,
                 start_date=start,
             )
@@ -165,6 +223,7 @@ def MembershipsScreen(page: ft.Page) -> ft.Row:
             sub_dialog_error.value = str(ex)
             page.update()
 
+    # ── Dialog đăng ký mới ────────────────────────────────────────────────────
     sub_dialog = ft.AlertDialog(
         modal=True,
         title=ft.Text("Đăng ký gói tập", size=theme.FONT_LG, weight=ft.FontWeight.BOLD),
@@ -183,22 +242,31 @@ def MembershipsScreen(page: ft.Page) -> ft.Row:
     )
 
     def open_add_sub(e):
+        """Mở dialog đăng ký gói tập mới.
+
+        Load danh sách hội viên + gói tập từ DB vào dropdown trước khi mở.
+        """
         members = member_repo.get_all()
         plans = membership_repo.get_all_plans()
+        # Tạo options cho dropdown hội viên: hiển thị tên, value = ID
         fs_member.options = [ft.dropdown.Option(m.id, m.name) for m in members]
-        fs_plan.options = [ft.dropdown.Option(p.id, f"{p.name} ({p.duration_days}d - {int(p.price):,}đ)") for p in plans]
-        fs_member.value = fs_plan.value = None
+        # Tạo options cho dropdown gói: hiển thị "tên (số ngày - giá)"
+        fs_plan.options = [ft.dropdown.Option(p.id, f"{p.name} ({p.duration_days}d - {int(p.price):,}đ)")
+                           for p in plans]
+        fs_member.value = fs_plan.value = None  # Reset selection
         fs_price.value = fs_start.value = ""
         sub_dialog_error.value = ""
         sub_dialog.open = True
         page.update()
 
+    # ── Mapping màu status ────────────────────────────────────────────────────
     STATUS_COLORS = {
         "active": (theme.GREEN_LIGHT, theme.GREEN),
         "expired": (theme.AMBER_LIGHT, theme.AMBER),
         "cancelled": (theme.RED_LIGHT, theme.RED),
     }
 
+    # ── Dialog xác nhận hủy gói ──────────────────────────────────────────────
     cancel_confirm_dlg = ft.AlertDialog(
         modal=True,
         title=ft.Text("Xác nhận hủy gói tập"),
@@ -207,10 +275,11 @@ def MembershipsScreen(page: ft.Page) -> ft.Row:
     cancel_target_id = {"id": None}
 
     def do_cancel(e):
+        """Thực hiện hủy gói tập sau khi user xác nhận."""
         try:
             membership_svc.cancel_subscription(cancel_target_id["id"])
         except ValueError:
-            pass
+            pass  # Bỏ qua nếu gói không thể hủy (đã expired/cancelled)
         cancel_confirm_dlg.open = False
         page.update()
         refresh_subs()
@@ -221,39 +290,56 @@ def MembershipsScreen(page: ft.Page) -> ft.Row:
     ]
 
     def open_cancel_confirm(sub_id: str):
+        """Mở dialog xác nhận hủy gói tập."""
         cancel_target_id["id"] = sub_id
         cancel_confirm_dlg.open = True
         page.update()
 
     def refresh_subs():
-        membership_svc.auto_expire_subscriptions()
+        """Tải lại danh sách đăng ký gói tập từ database.
+
+        Cũng gọi auto_expire để tự động chuyển gói quá hạn → 'expired'.
+        """
+        membership_svc.auto_expire_subscriptions()  # Tự động expire các gói quá hạn
         subs = membership_repo.get_all_subscriptions()
+        # Tạo mapping ID → tên (để hiển thị tên thay vì UUID)
         members_map = {m.id: m.name for m in member_repo.get_all(active_only=False)}
         plans_map = {p.id: p.name for p in membership_repo.get_all_plans(active_only=False)}
+
         rows = []
         for s in subs:
             bg, fg = STATUS_COLORS.get(s.status, (theme.GRAY_LIGHT, theme.GRAY))
+            # Nút "Hủy" chỉ hiện khi gói đang active
             cancel_btn = ft.Container(
-                content=ft.Text("Hủy", size=theme.FONT_XS, color=theme.RED, weight=ft.FontWeight.W_600),
+                content=ft.Text("Hủy", size=theme.FONT_XS, color=theme.RED,
+                                weight=ft.FontWeight.W_600),
                 border=ft.border.all(1, theme.RED), border_radius=6,
                 padding=ft.padding.symmetric(horizontal=8, vertical=3),
                 on_click=lambda e, sid=s.id: open_cancel_confirm(sid),
             ) if s.status == MembershipSubscription.STATUS_ACTIVE else ft.Container(width=46)
+            # ↑ Nếu không active → tạo container rỗng cùng kích thước (giữ layout đều)
+
             rows.append(ft.Container(
                 content=ft.Row(
                     controls=[
                         ft.Text(members_map.get(s.member_id, "?"), size=theme.FONT_SM,
                                 weight=ft.FontWeight.W_500, color=theme.TEXT_PRIMARY, expand=True),
-                        ft.Text(plans_map.get(s.plan_id, "?"), size=theme.FONT_SM, color=theme.GRAY, width=160),
-                        ft.Text(s.start_date.strftime("%d/%m/%Y"), size=theme.FONT_SM, color=theme.GRAY, width=100),
-                        ft.Text(s.end_date.strftime("%d/%m/%Y"), size=theme.FONT_SM, color=theme.GRAY, width=100),
+                        ft.Text(plans_map.get(s.plan_id, "?"), size=theme.FONT_SM,
+                                color=theme.GRAY, width=160),
+                        ft.Text(s.start_date.strftime("%d/%m/%Y"), size=theme.FONT_SM,
+                                color=theme.GRAY, width=100),
+                        ft.Text(s.end_date.strftime("%d/%m/%Y"), size=theme.FONT_SM,
+                                color=theme.GRAY, width=100),
+                        # Badge trạng thái
                         ft.Container(
-                            content=ft.Text(s.status, size=theme.FONT_XS, color=fg, weight=ft.FontWeight.W_600),
+                            content=ft.Text(s.status, size=theme.FONT_XS, color=fg,
+                                            weight=ft.FontWeight.W_600),
                             bgcolor=bg, border_radius=theme.BADGE_RADIUS,
                             padding=ft.padding.symmetric(horizontal=8, vertical=3), width=80,
                             alignment=ft.Alignment.CENTER,
                         ),
-                        ft.Text(f"{int(s.price_paid):,}đ", size=theme.FONT_SM, color=theme.ORANGE, width=100),
+                        ft.Text(f"{int(s.price_paid):,}đ", size=theme.FONT_SM,
+                                color=theme.ORANGE, width=100),
                         cancel_btn,
                     ],
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
@@ -265,16 +351,22 @@ def MembershipsScreen(page: ft.Page) -> ft.Row:
         subs_body.controls = rows
         page.update()
 
-    # ── Tabs ─────────────────────────────────────────────────────────────────
+    # ══════════════════════════════════════════════════════════════════════════
+    # TABS (Chuyển đổi giữa Gói tập và Đăng ký)
+    # ══════════════════════════════════════════════════════════════════════════
+    # Đăng ký tất cả dialog vào overlay
     page.overlay.extend([plan_dialog, confirm_plan_dlg, sub_dialog, cancel_confirm_dlg])
 
+    # ── Nội dung Tab "Gói tập" ────────────────────────────────────────────────
     plans_tab_content = ft.Container(
         content=ft.Column(
             controls=[
                 ft.Row(
                     controls=[
-                        ft.Text("Danh sách gói tập", size=theme.FONT_LG, weight=ft.FontWeight.BOLD, color=theme.TEXT_PRIMARY),
-                        ft.ElevatedButton("+ Thêm gói", bgcolor=theme.ORANGE, color=theme.WHITE, on_click=open_add_plan),
+                        ft.Text("Danh sách gói tập", size=theme.FONT_LG,
+                                weight=ft.FontWeight.BOLD, color=theme.TEXT_PRIMARY),
+                        ft.ElevatedButton("+ Thêm gói", bgcolor=theme.ORANGE,
+                                          color=theme.WHITE, on_click=open_add_plan),
                     ],
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                 ),
@@ -290,29 +382,39 @@ def MembershipsScreen(page: ft.Page) -> ft.Row:
         padding=ft.padding.all(theme.PAD_2XL),
     )
 
+    # ── Header cột cho tab Đăng ký ────────────────────────────────────────────
     subs_col_header = ft.Container(
         content=ft.Row(
             controls=[
-                ft.Text("Hội viên", size=theme.FONT_XS, color=theme.GRAY, weight=ft.FontWeight.W_600, expand=True),
-                ft.Text("Gói tập", size=theme.FONT_XS, color=theme.GRAY, weight=ft.FontWeight.W_600, width=160),
-                ft.Text("Bắt đầu", size=theme.FONT_XS, color=theme.GRAY, weight=ft.FontWeight.W_600, width=100),
-                ft.Text("Kết thúc", size=theme.FONT_XS, color=theme.GRAY, weight=ft.FontWeight.W_600, width=100),
-                ft.Text("Trạng thái", size=theme.FONT_XS, color=theme.GRAY, weight=ft.FontWeight.W_600, width=80),
-                ft.Text("Giá trả", size=theme.FONT_XS, color=theme.GRAY, weight=ft.FontWeight.W_600, width=100),
-                ft.Text("", width=46),
+                ft.Text("Hội viên", size=theme.FONT_XS, color=theme.GRAY,
+                        weight=ft.FontWeight.W_600, expand=True),
+                ft.Text("Gói tập", size=theme.FONT_XS, color=theme.GRAY,
+                        weight=ft.FontWeight.W_600, width=160),
+                ft.Text("Bắt đầu", size=theme.FONT_XS, color=theme.GRAY,
+                        weight=ft.FontWeight.W_600, width=100),
+                ft.Text("Kết thúc", size=theme.FONT_XS, color=theme.GRAY,
+                        weight=ft.FontWeight.W_600, width=100),
+                ft.Text("Trạng thái", size=theme.FONT_XS, color=theme.GRAY,
+                        weight=ft.FontWeight.W_600, width=80),
+                ft.Text("Giá trả", size=theme.FONT_XS, color=theme.GRAY,
+                        weight=ft.FontWeight.W_600, width=100),
+                ft.Text("", width=46),  # Cột nút hủy (trống cho header)
             ],
         ),
         bgcolor=theme.BG,
         padding=ft.padding.symmetric(horizontal=theme.PAD_LG, vertical=theme.PAD_SM),
     )
 
+    # ── Nội dung Tab "Đăng ký" ────────────────────────────────────────────────
     subs_tab_content = ft.Container(
         content=ft.Column(
             controls=[
                 ft.Row(
                     controls=[
-                        ft.Text("Đăng ký gói tập", size=theme.FONT_LG, weight=ft.FontWeight.BOLD, color=theme.TEXT_PRIMARY),
-                        ft.ElevatedButton("+ Đăng ký mới", bgcolor=theme.ORANGE, color=theme.WHITE, on_click=open_add_sub),
+                        ft.Text("Đăng ký gói tập", size=theme.FONT_LG,
+                                weight=ft.FontWeight.BOLD, color=theme.TEXT_PRIMARY),
+                        ft.ElevatedButton("+ Đăng ký mới", bgcolor=theme.ORANGE,
+                                          color=theme.WHITE, on_click=open_add_sub),
                     ],
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                 ),
@@ -327,15 +429,21 @@ def MembershipsScreen(page: ft.Page) -> ft.Row:
         ),
         padding=ft.padding.all(theme.PAD_2XL),
     )
+
     def on_tab_change(e):
+        """Callback khi user chuyển tab.
+        Tab 0 = Gói tập → refresh plans
+        Tab 1 = Đăng ký → refresh subs
+        """
         if e.control.selected_index == 0:
             refresh_plans()
         else:
             refresh_subs()
 
+    # ── Widget Tabs (Flet) ────────────────────────────────────────────────────
     tabs = ft.Tabs(
-        selected_index=0,
-        length=2,
+        selected_index=0,   # Tab mặc định: Gói tập
+        length=2,            # Số lượng tab
         expand=True,
         content=ft.Column(
             expand=True,
@@ -349,23 +457,24 @@ def MembershipsScreen(page: ft.Page) -> ft.Row:
                 ft.TabBarView(
                     expand=True,
                     controls=[
-                        plans_tab_content,
-                        subs_tab_content,
+                        plans_tab_content,   # Nội dung tab 1
+                        subs_tab_content,    # Nội dung tab 2
                     ],
-            
                 ),
             ],
         ),
         on_change=on_tab_change,
     )
 
+    # ── Layout chính ──────────────────────────────────────────────────────────
     main_content = ft.Column(
         controls=[
             Header(page),
             ft.Container(
                 content=ft.Column(
                     controls=[
-                        ft.Text("Gói tập & Đăng ký", size=theme.FONT_2XL, weight=ft.FontWeight.BOLD, color=theme.TEXT_PRIMARY),
+                        ft.Text("Gói tập & Đăng ký", size=theme.FONT_2XL,
+                                weight=ft.FontWeight.BOLD, color=theme.TEXT_PRIMARY),
                         tabs,
                     ],
                     spacing=theme.PAD_LG,
@@ -380,7 +489,7 @@ def MembershipsScreen(page: ft.Page) -> ft.Row:
         expand=True,
     )
 
-    refresh_plans()
+    refresh_plans()  # Load dữ liệu tab 1 khi mở màn hình
 
     return ft.Row(
         controls=[Sidebar(page, active_route="packages"), main_content],

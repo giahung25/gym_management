@@ -1,3 +1,6 @@
+
+
+yêu cầu 1 : 
 "Hãy đóng vai một Chuyên gia Viết Tài liệu Kỹ thuật.. Nhiệm vụ của bạn là viết một bản báo cáo giải thích chi tiết nhất có thể theo cấu trúc sau:
 
 Tổng quan file: 
@@ -14,3 +17,8 @@ Với mỗi dòng code quan trọng, hãy giải thích: Tại sao lại dùng h
 hãy đọc tất cả các file trong thư mục nhất là foder doc để hiểu rõ về hệ thống
 
 trình bày báo cáo rõ ràng , chi tiết , có đường link dẫn đến doc liên quan đến đó nêu cần thiết 
+ 
+yêu cầu 2:
+
+hãy tưởng tượng tôi là 1 sinh viên đang học lập trình  hãy note lại để có thể hiểu và làm việc với hệ thống này 
+tôi muốn bạn note trực tiếp trong từng hàm , từng dòng code chi tiết  

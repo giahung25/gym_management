@@ -1,15 +1,24 @@
-## Hoạt động: Xóa thư mục presentation khỏi repository
+## Hoạt động: Thêm comment chi tiết tiếng Việt vào toàn bộ codebase
 
-**Thời gian:** 2026-03-21 12:57 (UTC+7)
+**Thời gian:** 2026-03-22 19:44
 **Files tác động:**
-- `presentation/GymAdmin_Presentation.pptx` — đã xóa
-- `presentation/create_pptx.py` — đã xóa
+- `app/core/config.py`, `app/core/database.py`, `app/core/security.py`
+- `app/models/base.py`, `app/models/member.py`, `app/models/membership.py`, `app/models/equipment.py`
+- `app/repositories/member_repo.py`, `app/repositories/membership_repo.py`, `app/repositories/equipment_repo.py`
+- `app/services/member_svc.py`, `app/services/membership_svc.py`, `app/services/equipment_svc.py`
+- `app/main.py`
+- `gui/theme.py`, `gui/login.py`, `gui/dashboard.py`, `gui/members.py`, `gui/memberships.py`, `gui/equipment.py`, `gui/reports.py`
+- `gui/components/header.py`, `gui/components/sidebar.py`
 
 **Tóm tắt thay đổi:**
-- Xóa toàn bộ thư mục `presentation/` khỏi git tracking theo yêu cầu người dùng
-- File đã được push nhầm lên remote, nay xóa bằng `git rm -r`
+- Thêm comment tiếng Việt chi tiết vào toàn bộ 23 file source code
+- Giải thích từng khái niệm Python: class, inheritance, super(), UUID, datetime, contextmanager, regex, lambda, closure, dict comprehension, setattr, *args/**kwargs
+- Giải thích kiến trúc 3-layer: GUI → Service → Repository → Database
+- Giải thích SQLite3: PRAGMA foreign_keys, row_factory, soft delete, SQL injection prevention
+- Giải thích Flet GUI: ft.Page, ft.Container, ft.Row, ft.Column, ft.AlertDialog, ft.Stack, page.overlay, monkey patching
+- Mục tiêu: sinh viên học lập trình có thể đọc và hiểu toàn bộ hệ thống
 
-**Trạng thái Test:** Không liên quan
+**Trạng thái Test:** Chưa có test suite.
 
 ---
 
