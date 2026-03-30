@@ -32,3 +32,11 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+#agent
+.agent/
+.claude/
+#skill 
+skill-lock.json
+CLAUDE.md
+#sdk
+.sdk/

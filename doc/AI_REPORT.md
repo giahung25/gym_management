@@ -1,3 +1,33 @@
+## Hoạt động: Sửa thanh tìm kiếm — chuyển sang ft.SearchBar chuẩn (header + members)
+
+**Thời gian:** 2026-03-26 21:52
+**Files tác động:**
+- `gui/members.py`
+- `gui/components/header.py`
+
+**Tóm tắt thay đổi:**
+- Thanh tìm kiếm ở cả Header và Members trước đây dùng custom layout (Container > Row > Icon + TextField), gây lỗi chữ bị lệch so với icon.
+- Đã thay bằng `ft.SearchBar` — component chuẩn của Flet, sử dụng các thuộc tính `bar_leading`, `bar_hint_text`, `bar_bgcolor`, `bar_border_side`, `bar_text_style`, `bar_hint_text_style` để styling.
+- Header: width=320, Members: width=260. Cả hai dùng cùng pattern styling.
+
+**Trạng thái Test:** Chưa có automated test.
+
+---
+
+## Hoạt động: Sửa lỗi xóa hội viên — đổi sang hard delete
+
+**Thời gian:** 2026-03-26 20:52
+**Files tác động:**
+- `app/repositories/member_repo.py`
+
+**Tóm tắt thay đổi:**
+- Hàm `delete()` trước đây dùng soft delete (chỉ set `is_active = 0`), khiến record vẫn còn trong DB.
+- Đã đổi sang hard delete: `DELETE FROM members WHERE id = ?` — xóa hẳn dòng khỏi database.
+
+**Trạng thái Test:** Chưa có automated test.
+
+---
+
 ## Hoạt động: Thêm comment chi tiết tiếng Việt vào toàn bộ codebase
 
 **Thời gian:** 2026-03-22 19:44

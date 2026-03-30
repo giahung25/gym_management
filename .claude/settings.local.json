@@ -9,7 +9,8 @@
       "Bash(python -c \"from gui.components.sidebar import Sidebar; print\\(''OK''\\)\")",
       "Bash(python -c \"from gui.memberships import MembershipsScreen; print\\(''OK''\\)\")",
       "Bash(pip show:*)",
-      "Bash(python presentation/create_pptx.py)"
+      "Bash(python presentation/create_pptx.py)",
+      "Bash(git pull:*)"
     ]
   }
 }

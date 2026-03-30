@@ -191,18 +191,10 @@ def update(member: Member) -> Member:
 
 
 def delete(id: str):
-    """Xóa mềm hội viên (soft delete): đặt is_active = 0.
-
-    KHÔNG xóa dòng khỏi database, chỉ đánh dấu là "đã xóa".
-    Dữ liệu vẫn còn → có thể khôi phục hoặc dùng cho báo cáo.
+    """Xóa hội viên khỏi database (hard delete).
 
     Tham số:
         id (str): UUID của hội viên cần xóa
     """
     with get_db() as conn:
-        conn.execute(
-            "UPDATE members SET is_active = 0, updated_at = ? WHERE id = ?",
-            # ↑ is_active = 0: đánh dấu đã xóa
-            # ↑ updated_at = thời gian hiện tại (ghi nhận lúc xóa)
-            (datetime.now().isoformat(), id)
-        )
+        conn.execute("DELETE FROM members WHERE id = ?", (id,))

@@ -47,32 +47,17 @@ def Header(page: ft.Page) -> ft.Container:
         if callable(cb):      # Nếu callback tồn tại và là hàm
             cb(e.control.value)  # Gọi callback, truyền giá trị ô search
 
-    # ── Thanh tìm kiếm (Search Bar) ──────────────────────────────────────────
-    search_bar = ft.Container(
-        content=ft.Row(
-            controls=[
-                # Icon kính lúp
-                ft.Icon(ft.Icons.SEARCH, color=theme.GRAY, size=16),
-                # Ô nhập text tìm kiếm
-                ft.TextField(
-                    hint_text="Search members, packages...",  # Placeholder text
-                    hint_style=ft.TextStyle(color=theme.GRAY, size=theme.FONT_SM),
-                    border=ft.InputBorder.NONE,    # Không viền (viền do Container bọc ngoài)
-                    height=36,
-                    text_size=theme.FONT_SM,
-                    content_padding=ft.padding.symmetric(horizontal=4, vertical=0),
-                    expand=True,        # Chiếm hết chiều ngang còn lại trong Row
-                    on_change=_on_search,  # Gọi _on_search mỗi khi user gõ
-                ),
-            ],
-            spacing=theme.PAD_SM,  # Khoảng cách giữa icon và TextField
-        ),
-        bgcolor=theme.WHITE,                          # Nền trắng
-        border_radius=theme.BUTTON_RADIUS,             # Bo góc 8px
-        border=ft.border.all(1, theme.BORDER),         # Viền xám 1px
-        padding=ft.padding.symmetric(horizontal=theme.PAD_MD, vertical=0),
-        width=320,   # Chiều rộng cố định 320px
-        height=40,   # Chiều cao 40px
+    # ── Thanh tìm kiếm (SearchBar chuẩn Flet) ─────────────────────────────────
+    search_bar = ft.SearchBar(
+        bar_hint_text="tìm kiếm tên thành viên , gói tập...",
+        bar_leading=ft.Icon(ft.Icons.SEARCH, color=theme.GRAY, size=16),
+        bar_bgcolor=theme.WHITE,
+        bar_border_side=ft.BorderSide(1, theme.BORDER),
+        bar_text_style=ft.TextStyle(size=theme.FONT_SM, color=theme.TEXT_PRIMARY),
+        bar_hint_text_style=ft.TextStyle(size=theme.FONT_SM, color=theme.GRAY),
+        on_change=_on_search,
+        width=320,
+        height=40,
     )
 
     # ── Nút thông báo (Notification Button) ──────────────────────────────────

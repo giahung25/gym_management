@@ -453,55 +453,68 @@ def MembersScreen(page: ft.Page) -> ft.Row:
     # FILTER CONTROLS (Bộ lọc)
     # ══════════════════════════════════════════════════════════════════════════
     # Dropdown lọc giới tính
-    gender_filter = ft.Dropdown(
-        label="Giới tính",
-        width=130,
-        border=ft.InputBorder.UNDERLINE,
-        enable_filter=True,
-        editable=True,
-        leading_icon=ft.Icons.SEARCH,
-        options=[
-            ft.dropdown.Option("", "Tất cả"),
-            ft.dropdown.Option("male", "Nam"),
-            ft.dropdown.Option("female", "Nữ"),
-            ft.dropdown.Option("other", "Khác"),
-        ],
-        value="",  # Mặc định: tất cả
-    )
+    # gender_filter = ft.Dropdown(
+    #     label="Giới tính",
+    #     width=130,
+    #     border=ft.InputBorder.UNDERLINE,
+    #     enable_filter=True,
+    #     editable=True,
+    #     leading_icon=ft.Icons.SEARCH,
+    #     options=[
+    #         ft.dropdown.Option("", "Tất cả"),
+    #         ft.dropdown.Option("male", "Nam"),
+    #         ft.dropdown.Option("female", "Nữ"),
+    #         ft.dropdown.Option("other", "Khác"),
+    #     ],
+    #     value="",  # Mặc định: tất cả
+    # )
 
-    def on_gender_change(e):
-        """Callback khi thay đổi filter giới tính."""
-        filter_gender.update({"value": e.control.value or None})  # "" → None (tất cả)
-        refresh_table()
+    # def on_gender_change(e):
+    #     """Callback khi thay đổi filter giới tính."""
+    #     filter_gender.update({"value": e.control.value or None})  # "" → None (tất cả)
+    #     refresh_table()
 
-    gender_filter.on_change = on_gender_change  # Gắn callback
+    # gender_filter.on_change = on_gender_change  # Gắn callback
 
-    # Dropdown lọc trạng thái gói tập
-    sub_status_filter = ft.Dropdown(
-        label="Gói tập",
-        width=150,
-        border=ft.InputBorder.UNDERLINE,
-        enable_filter=True,
-        editable=True,
-        leading_icon=ft.Icons.SEARCH,
-        options=[
-            ft.dropdown.Option("", "Tất cả"),
-            ft.dropdown.Option("active", "Đang active"),
-            ft.dropdown.Option("no_active", "Không active"),
-        ],
-        value="",
-    )
+    # # Dropdown lọc trạng thái gói tập
+    # sub_status_filter = ft.Dropdown(
+    #     label="Gói tập",
+    #     width=150,
+    #     border=ft.InputBorder.UNDERLINE,
+    #     enable_filter=True,
+    #     editable=True,
+    #     leading_icon=ft.Icons.SEARCH,
+    #     options=[
+    #         ft.dropdown.Option("", "Tất cả"),
+    #         ft.dropdown.Option("active", "Đang active"),
+    #         ft.dropdown.Option("no_active", "Không active"),
+    #     ],
+    #     value="",
+    # )
 
-    def on_sub_status_change(e):
-        """Callback khi thay đổi filter gói tập."""
-        filter_sub_status.update({"value": e.control.value or None})
-        refresh_table()
+    # def on_sub_status_change(e):
+    #     """Callback khi thay đổi filter gói tập."""
+    #     filter_sub_status.update({"value": e.control.value or None})
+    #     refresh_table()
 
-    sub_status_filter.on_change = on_sub_status_change
+    # sub_status_filter.on_change = on_sub_status_change
 
     # ══════════════════════════════════════════════════════════════════════════
     # LAYOUT (Bố cục giao diện)
     # ══════════════════════════════════════════════════════════════════════════
+
+    # ── Thanh tìm kiếm (SearchBar chuẩn Flet) ─────────────────────────────────
+    search_field = ft.SearchBar(
+        bar_hint_text="Tìm theo tên, SĐT, email...",
+        bar_leading=ft.Icon(ft.Icons.SEARCH, color=theme.GRAY, size=16),
+        bar_bgcolor=theme.WHITE,
+        bar_border_side=ft.BorderSide(1, theme.BORDER),
+        bar_text_style=ft.TextStyle(size=theme.FONT_SM, color=theme.TEXT_PRIMARY),
+        bar_hint_text_style=ft.TextStyle(size=theme.FONT_SM, color=theme.GRAY),
+        on_change=on_search,
+        width=260,
+        height=40,
+    )
 
     # ── Header row: tiêu đề + ô tìm kiếm + filter + nút thêm ────────────────
     header_row = ft.Row(
@@ -510,30 +523,7 @@ def MembersScreen(page: ft.Page) -> ft.Row:
                     color=theme.TEXT_PRIMARY),
             ft.Row(
                 controls=[
-                    # Ô tìm kiếm
-                    ft.Container(
-                        content=ft.Row(
-                            controls=[
-                                ft.Icon(ft.Icons.SEARCH, color=theme.GRAY, size=16),
-                                ft.TextField(
-                                    hint_text="Tìm theo tên, SĐT, email...",
-                                    border=ft.InputBorder.NONE,
-                                    height=36, text_size=theme.FONT_SM,
-                                    content_padding=ft.padding.symmetric(horizontal=4, vertical=0),
-                                    expand=True,
-                                    on_change=on_search,
-                                ),
-                            ],
-                            spacing=theme.PAD_SM,
-                        ),
-                        bgcolor=theme.WHITE,
-                        border_radius=theme.BUTTON_RADIUS,
-                        border=ft.border.all(1, theme.BORDER),
-                        padding=ft.padding.symmetric(horizontal=theme.PAD_MD, vertical=0),
-                        width=260, height=40,
-                    ),
-                    gender_filter,        # Dropdown giới tính
-                    sub_status_filter,    # Dropdown trạng thái
+                    search_field,
                     # Nút thêm hội viên
                     ft.ElevatedButton(
                         "+ Thêm hội viên",
@@ -542,6 +532,7 @@ def MembersScreen(page: ft.Page) -> ft.Row:
                     ),
                 ],
                 spacing=theme.PAD_MD,
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,
             ),
         ],
         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,

@@ -22,3 +22,42 @@ yêu cầu 2:
 
 hãy tưởng tượng tôi là 1 sinh viên đang học lập trình  hãy note lại để có thể hiểu và làm việc với hệ thống này 
 tôi muốn bạn note trực tiếp trong từng hàm , từng dòng code chi tiết  
+
+
+
+yêu cầu 3:
+search_field = ft.SearchBar(
+        bar_hint_text="Tìm theo tên, SĐT, email...",
+        bar_leading=ft.Icon(ft.Icons.SEARCH, color=theme.GRAY, size=16),
+        bar_bgcolor=theme.WHITE,
+        bar_border_side=ft.BorderSide(1, theme.BORDER),
+        bar_text_style=ft.TextStyle(size=theme.FONT_SM, color=theme.TEXT_PRIMARY),
+        bar_hint_text_style=ft.TextStyle(size=theme.FONT_SM, color=theme.GRAY),
+        on_change=on_search,
+        width=260,
+        height=40,
+    )
+
+    header_row = ft.Row(
+        controls=[
+            ft.Text("Hội viên", size=theme.FONT_2XL, weight=ft.FontWeight.BOLD,
+                    color=theme.TEXT_PRIMARY),
+            ft.Row(
+                controls=[
+                    search_field,
+                    # Nút thêm hội viên
+                    ft.ElevatedButton(
+                        "+ Thêm hội viên",
+                        bgcolor=theme.ORANGE, color=theme.WHITE,
+                        on_click=open_add_dialog,
+                    ),
+                ],
+                spacing=theme.PAD_MD,
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+            ),
+        ],
+        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+        vertical_alignment=ft.CrossAxisAlignment.CENTER,
+    )
+tôi thấy chữ trong thanh tìm kiếm bị lệch so với icon đây là code đã dc sữa lại
+đồng thơi tôi đã tải thêm cho bạn bộ tài liệu về flet bản mới nhất trong thư mục doc hãy kiểm tra lại phần gui để đúng chuẩn nhất
