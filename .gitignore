@@ -34,10 +34,12 @@ build/
 Thumbs.db
 #agent
 .agent/
+.agents/
 .claude/
 #skill 
 skill-lock.json
 CLAUDE.md
+sub_prompt.txt
 #sdk
 .sdk/
 doc/sdk/
